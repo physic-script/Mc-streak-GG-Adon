@@ -1,0 +1,78 @@
+name: Update Minecraft Streak 
+
+on:
+repository_dispatch:
+types: [mod_launch] 
+
+jobs:
+update:
+runs-on: ubuntu-latest
+steps:
+- name: Checkout Code
+uses: actions/checkout@v4 
+
+* name: Process Streak Math
+run: |
+node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('streaks.json', 'utf8'));
+
+const todayStr = new Date().toISOString().split('T')[0];
+const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+if (data.lastLaunch === todayStr) {
+console.log('Vandaag al geüpdatet.');
+process.exit(0);
+}
+
+if (data.lastLaunch === yesterdayStr) {
+data.currentStreak += 1;
+} else {
+data.currentStreak = 1;
+}
+
+if (data.currentStreak > data.highestStreak) {
+data.highestStreak = data.currentStreak;
+}
+
+data.lastLaunch = todayStr;
+fs.writeFileSync('streaks.json', JSON.stringify(data, null, 2));
+"
+* name: Push Database Changes
+run: |
+git config --global user.name "Streak Bot"
+git config --global user.email "[bot@github.com](mailto:bot@github.com)"
+git add streaks.json
+git commit -m "Update streak data" || exit 0
+git push
+* name: Send Discord Embed
+env:
+DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+run: |
+node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('streaks.json', 'utf8'));
+const https = require('https');
+
+const payload = {
+embeds: [{
+title: '🔥 Minecraft Streak Update!',
+color: 5814783,
+fields: [
+{ name: 'Speler', value: data.playerName, inline: true },
+{ name: 'Huidige Streak', value: data.currentStreak + ' Dagen', inline: true },
+{ name: 'Hoogste Streak', value: data.highestStreak + ' Dagen', inline: true }
+],
+timestamp: new Date().toISOString()
+}]
+};
+
+const req = https.request(process.env.DISCORD_WEBHOOK, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' }
+});
+req.write(JSON.stringify(payload));
+req.end();
+"
