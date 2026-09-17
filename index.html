@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Streak Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #0f111a; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .dashboard { background: #1a1d2e; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center; border: 1px solid #2f344d; width: 350px; }
+        h1 { color: #5865F2; margin-bottom: 5px; }
+        .stat-box { background: #242942; margin: 15px 0; padding: 15px; border-radius: 8px; font-size: 1.2rem; }
+        .fire { font-size: 3rem; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1 id="player">Laden...</h1>
+        <p>Minecraft Activity Dashboard</p>
+        <div class="fire">🔥</div>
+        <div class="stat-box">Huidige Streak: <strong id="current">0</strong> Dagen</div>
+        <div class="stat-box">Hoogste Streak: <strong id="highest">0</strong> Dagen</div>
+        <p style="font-size: 0.8rem; color: #6b7280;">Laatste Sync: <span id="last">-</span></p>
+    </div>
+    <script>
+        fetch('streaks.json?t=' + new Date().getTime())
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('player').innerText = data.playerName;
+                document.getElementById('current').innerText = data.currentStreak;
+                document.getElementById('highest').innerText = data.highestStreak;
+                document.getElementById('last').innerText = data.lastLaunch;
+            });
+    </script>
+</body>
+</html>
